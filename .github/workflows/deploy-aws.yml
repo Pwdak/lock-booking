@@ -1,0 +1,108 @@
+name: Deploy AWS
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: eu-west-3
+  TF_IN_AUTOMATION: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: infra/terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=locks-rdv/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}" \
+            -backend-config="encrypt=true"
+
+      - name: Create ECR first
+        working-directory: infra/terraform
+        env:
+          TF_VAR_aws_region: ${{ env.AWS_REGION }}
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+          TF_VAR_pro_username: ${{ secrets.PRO_USERNAME }}
+          TF_VAR_pro_password: ${{ secrets.PRO_PASSWORD }}
+          TF_VAR_app_secret: ${{ secrets.APP_SECRET }}
+        run: terraform apply -auto-approve -target=aws_ecr_repository.backend
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend image
+        working-directory: .
+        run: |
+          ECR_REPOSITORY_URL="$(terraform -chdir=infra/terraform output -raw ecr_repository_url)"
+          IMAGE_URI="$ECR_REPOSITORY_URL:${GITHUB_SHA}"
+          docker build -f backend/Dockerfile -t "$IMAGE_URI" .
+          docker push "$IMAGE_URI"
+          echo "IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
+
+      - name: Apply AWS infrastructure
+        working-directory: infra/terraform
+        env:
+          TF_VAR_aws_region: ${{ env.AWS_REGION }}
+          TF_VAR_backend_image: ${{ env.IMAGE_URI }}
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+          TF_VAR_pro_username: ${{ secrets.PRO_USERNAME }}
+          TF_VAR_pro_password: ${{ secrets.PRO_PASSWORD }}
+          TF_VAR_app_secret: ${{ secrets.APP_SECRET }}
+        run: terraform apply -auto-approve
+
+      - name: Build frontend with backend URL
+        run: |
+          BACKEND_URL="$(terraform -chdir=infra/terraform output -raw backend_url)"
+          echo "VITE_API_URL=$BACKEND_URL" > .env.production
+          npm run build
+
+      - name: Upload frontend to S3
+        run: |
+          FRONTEND_BUCKET="$(terraform -chdir=infra/terraform output -raw frontend_bucket_name)"
+          aws s3 sync dist/ "s3://$FRONTEND_BUCKET" --delete
+
+      - name: Invalidate CloudFront
+        run: |
+          DISTRIBUTION_ID="$(terraform -chdir=infra/terraform output -raw cloudfront_distribution_id)"
+          aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/*"
+
+      - name: Show URLs
+        run: |
+          echo "Frontend: $(terraform -chdir=infra/terraform output -raw frontend_url)"
+          echo "API HTTPS: $(terraform -chdir=infra/terraform output -raw backend_url)"
+          echo "ALB debug: $(terraform -chdir=infra/terraform output -raw alb_backend_url)"

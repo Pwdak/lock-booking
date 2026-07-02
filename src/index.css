@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    font-family:
+      Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #17120f;
+  }
+}
+
+@layer components {
+  .input-light {
+    width: 100%;
+    border-radius: 1.25rem;
+    border: 1px solid rgb(28 25 23 / 0.14);
+    background: rgb(255 255 255 / 0.72);
+    padding: 0.9rem 1rem;
+    color: #1c1917;
+    outline: none;
+    transition:
+      border-color 180ms ease,
+      box-shadow 180ms ease,
+      background 180ms ease;
+  }
+
+  .input-light:focus {
+    border-color: #1c1917;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgb(28 25 23 / 0.08);
+  }
+
+  .status-button {
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 0.12);
+    padding: 0.65rem 0.9rem;
+    color: #f5f5f4;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition:
+      transform 180ms ease,
+      background 180ms ease,
+      border-color 180ms ease;
+  }
+
+  .status-button:hover {
+    transform: translateY(-1px);
+    border-color: rgb(253 230 138 / 0.55);
+    background: rgb(253 230 138 / 0.12);
+  }
+
+  .status-button.danger:hover {
+    border-color: rgb(254 205 211 / 0.6);
+    background: rgb(254 205 211 / 0.12);
+  }
+}
+
+@layer utilities {
+  .animate-breathe {
+    animation: breathe 9s ease-in-out infinite;
+  }
+
+  .animate-breathe-delayed {
+    animation: breathe 11s ease-in-out 1.2s infinite;
+  }
+
+  .animate-rise {
+    animation: rise 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .animate-rise-delayed {
+    animation: rise 760ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+  }
+
+  .animate-list-in {
+    animation: list-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(26px, -18px, 0) scale(1.08);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes list-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
