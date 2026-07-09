@@ -1,0 +1,21 @@
+# Binaires de providers téléchargés par terraform init (peuvent peser plusieurs centaines de Mo)
+.terraform/
+
+# Fichiers d'état - contiennent parfois des données sensibles (mots de passe RDS, etc.)
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Fichiers de variables pouvant contenir des secrets
+*.tfvars
+!*.tfvars.example
+
+# Logs de crash Terraform
+crash.log
+crash.*.log
+
+# Fichiers d'override locaux
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json

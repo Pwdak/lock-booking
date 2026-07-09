@@ -1,0 +1,8 @@
+# Copier ce fichier en terraform.tfvars et renseigner les vraies valeurs.
+# terraform.tfvars ne doit JAMAIS être commité (voir .gitignore).
+
+db_password  = "change-me-with-a-strong-password"
+app_secret   = "change-me-random-64-chars-minimum"
+pro_password = "change-me-strong-password"
+
+# image_tag  = "latest"  # décommenter et adapter après le premier build/push sur ECR
