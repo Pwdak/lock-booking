@@ -1,6 +1,6 @@
 # Loc'Tresses Rendez-vous
 
-![Loc'Tresses - Rendez-vous Management](./architecture-aws.svg)
+![Loc'Tresses - Rendez-vous Management](./lock-booking-architecture.jpg)
 
 Application web pour gerer les rendez-vous d'une professionnelle qui propose des services de tresseuse de locks.
 
