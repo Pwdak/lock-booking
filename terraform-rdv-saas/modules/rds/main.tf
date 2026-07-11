@@ -52,7 +52,7 @@ resource "aws_db_instance" "postgres" {
   backup_retention_period  = var.backup_retention_days
   skip_final_snapshot      = false
   final_snapshot_identifier = "${local.name}-db-final-${formatdate("YYYYMMDD-hhmm", timestamp())}"
-  deletion_protection      = true
+  deletion_protection      = false
 
   tags = {
     Name = "${local.name}-db"
